@@ -1,0 +1,10 @@
+flask
+pandas
+sqlalchemy
+pymysql
+pyodbc
+azure-storage-blob
+transformers
+torch
+scikit-learn
+openpyxl

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NLP - SQL Dashboard</title>
+    <script>
+        async function uploadFiles() {
+            let formData = new FormData(document.getElementById('uploadForm'));
+            document.getElementById('message').innerText = "📦 Files are being loaded into the database...";
+            await fetch("/upload_files", { method: "POST", body: formData });
+            document.getElementById('message').innerText = "✅ Files loaded successfully.";
+            document.getElementById('showTablesBtn').style.display = "inline";
+        }
+
+        async function showTables() {
+            const db = document.getElementById("database").value;
+            if (!db) return;
+
+            const response = await fetch(`/get_tables?db=${db}`);
+            const tables = await response.json();
+
+            const tableDiv = document.getElementById("tables_list");
+            tableDiv.innerHTML = "<h3>📊 Tables:</h3><ul>";
+            tables.forEach(table => {
+                tableDiv.innerHTML += `<li><a href="#" onclick="showColumns('${table}'); return false;">${table}</a></li>`;
+            });
+            tableDiv.innerHTML += "</ul>";
+        }
+
+        async function showColumns(table) {
+            const db = document.getElementById("database").value;
+
+            const colResponse = await fetch(`/get_columns?db=${db}&table=${table}`);
+            const cols = await colResponse.json();
+
+            const colDiv = document.getElementById("columns_list");
+            colDiv.innerHTML = `<h4>📌 Columns in <b>${table}</b>:</h4><ul>` +
+                cols.map(c => `<li>${c}</li>`).join("") +
+                "</ul>";
+
+            // Show recent data
+            const recentResponse = await fetch(`/get_recent_records?db=${db}&table=${table}`);
+            const data = await recentResponse.json();
+            const recentDiv = document.getElementById("recent_data");
+            if (data.length > 0) {
+                let headers = Object.keys(data[0]);
+                let html = "<h4>🕒 Recent 10 Records:</h4><table border='1'><tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+                data.forEach(row => {
+                    html += "<tr>" + headers.map(h => `<td>${row[h]}</td>`).join("") + "</tr>";
+                });
+                html += "</table>";
+                recentDiv.innerHTML = html;
+            } else {
+                recentDiv.innerHTML = "<i>No recent records available.</i>";
+            }
+        }
+
+        async function runQuery() {
+            let db = document.getElementById("database").value;
+            let query = document.getElementById("nlp_query").value;
+            let formData = new FormData();
+            formData.append("database", db);
+            formData.append("query", query);
+
+            let response = await fetch("/run_query", { method: "POST", body: formData });
+            let result = await response.json();
+            document.getElementById("generated_sql").innerText = result.sql;
+            document.getElementById("query_result").innerText = result.result;
+        }
+
+        function resetPage() {
+            window.location.href = "/reset";
+        }
+    </script>
+</head>
+
+<body>
+    <h2>🧠 Data Upload + NLP Query Dashboard</h2>
+
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+        <label>Select Database:</label>
+        <select name="database" id="database" required>
+            <option value="">-- Select --</option>
+            {% for db in databases %}
+            <option value="{{ db }}">{{ db }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <label>Upload CSV/XLSX Files:</label>
+        <input type="file" name="file" multiple accept=".csv,.xlsx"><br><br>
+
+        <button type="button" onclick="uploadFiles()">Upload Files</button>
+    </form>
+
+    <div id="message" style="margin-top: 10px;"></div><br>
+
+    <button id="showTablesBtn" onclick="showTables()" style="display:none;">Show Tables</button>
+
+    <div id="tables_list"></div>
+    <div id="columns_list"></div>
+    <div id="recent_data"></div>
+
+    <hr>
+
+    <h3>🤖 Enter NLP Query:</h3>
+    <textarea id="nlp_query" rows="4" cols="80" placeholder="e.g., Show accounts with revenue above 100000"></textarea><br><br>
+    <button onclick="runQuery()">Run NLP Query</button>
+
+    <h3>📝 Generated SQL:</h3>
+    <pre id="generated_sql"></pre>
+
+    <h3>📈 Query Result:</h3>
+    <pre id="query_result"></pre>
+
+    <br><br>
+    <button onclick="resetPage()">Reset</button>
+</body>
+</html>

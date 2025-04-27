@@ -1,0 +1,24 @@
+# 1. 📁 Upload CSV/XLSX Files to Azure Blob and Database (MySQL/SQLServer)
+curl -X POST http://localhost:5000/upload_files \
+  -F "database=CRM" \
+  -F "file=@/path/to/accounts.csv" \
+  -F "file=@/path/to/products.xlsx"
+
+# (Replace /path/to/ with your actual file path on your machine)
+
+# 2. 📋 Get List of Tables in a Selected Database
+curl "http://localhost:5000/get_tables?db=CRM"
+
+# 3. 📋 Get Columns of a Specific Table
+curl "http://localhost:5000/get_columns?db=CRM&table=accounts"
+
+# 4. 🕒 Get Recent Records from a Table
+curl "http://localhost:5000/get_recent_records?db=CRM&table=accounts"
+
+# 5. 🤖 Run Natural Language to SQL Query
+curl -X POST http://localhost:5000/run_query \
+  -F "database=CRM" \
+  -F "query=List all accounts with revenue above 1 million"
+
+# 6. 🔄 Reset Dashboard
+curl http://localhost:5000/reset
